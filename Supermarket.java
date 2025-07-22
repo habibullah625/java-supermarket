@@ -36,16 +36,18 @@ public class Supermarket {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
-        ShoppingTrolley myBag = new ShoppingTrolley(); //this is myBag. I can buy things to put in it
+        ShoppingTrolley myBag = new ShoppingTrolley(); // this is myBag. I can buy things to put in it
         Scanner input = new Scanner(System.in);
+        boolean isRunning = true;
 
-        // Keep showing menu and processing choice
-        while (true) {
+        // Main application loop. Continues until the user checks out.
+        while (isRunning) {
             showMenu();
             int choice = readChoice(input);
-            processChoice(myBag, input, choice);
+            isRunning = processChoice(myBag, input, choice);
         }
+
+        System.out.println("\nThank you for shopping with us!");
     }
 
     /**
@@ -57,49 +59,73 @@ public class Supermarket {
             System.out.println((index + 1) + ". Buy " + marketItems[index].productName);
         }
         System.out.println(EXIT + ". Checkout");
-        System.out.print("Enter choice: ");
     }
     
      /**
-     * Read valid choice (1 to EXIT).
+     * Read a valid menu choice from the user.
+     * Keeps prompting until a valid integer is entered.
+     * @param input Scanner for user input
+     * @return A valid menu choice
      */
     private static int readChoice(Scanner input) {
-        int choice = 0;
-        boolean invalid = true;
-        while (invalid) {
+        int choice = -1;
+        do {
+            System.out.print("Enter choice: ");
             if (input.hasNextInt()) {
                 choice = input.nextInt();
-                if (choice >= 1 && choice <= EXIT) {
-                    invalid = false;
-                } else {
-                    System.out.println("Pick 1 to " + EXIT + ".");
-                    showMenu();
+                if (!isChoiceValid(choice)) {
+                    System.out.println("Invalid choice. Pick a number from 1 to " + EXIT + ".");
+                    choice = -1; // Reset choice to ensure loop continues
                 }
             } else {
-                System.out.println("Pick 1 to " + EXIT + ".");
-                input.nextLine();
-                showMenu();
+                System.out.println("Invalid input. Please enter a number.");
+                input.nextLine(); // Clear the invalid input
+                choice = -1;     // Reset choice to ensure loop continues
             }
-        }
+        } while (!isChoiceValid(choice));
         return choice;
+    }
+
+    /**
+     * Checks if the user's menu choice is within the valid range.
+     * @param choice The integer choice to validate.
+     * @return true if the choice is valid, false otherwise.
+     */
+    private static boolean isChoiceValid(int choice) {
+        return choice >= 1 && choice <= EXIT;
     }
     
      /**
-     * Process user choice.
+     * Process user choice. Adds item to trolley or checks out.
+     * @param shopTrolley The user's shopping trolley
+     * @param input Scanner for user input
+     * @param choice The user's menu choice
+     * @return false if the user checks out, true otherwise.
      */
-    private static void processChoice(ShoppingTrolley shopTrolley, Scanner input, int choice) {
-        while (choice == EXIT) {
+    private static boolean processChoice(ShoppingTrolley shopTrolley, Scanner input, int choice) {
+        if (choice == EXIT) {
             checkout(shopTrolley);
-            System.exit(0);
-            return;
+            return false; // Signals the main loop to stop
         }
         addToTrolley(shopTrolley, input, choice - 1);
+        return true; // Signals the main loop to continue
     }
     
     /**
      * Add products to trolley.
      */
     private static void addToTrolley(ShoppingTrolley shopTrolley, Scanner input, int itemIndex) {
+        int quantity = promptForQuantity(input);
+        addProductsToTrolley(shopTrolley, itemIndex, quantity);
+        System.out.println("Products added to your trolley.");
+    }
+
+    /**
+     * Prompt the user for a valid quantity.
+     * @param input Scanner for user input
+     * @return Valid quantity (int > 0)
+     */
+    private static int promptForQuantity(Scanner input) {
         System.out.print("Enter quantity (How much do you want?): ");
         int quantity = 0;
         boolean invalid = true;
@@ -118,12 +144,21 @@ public class Supermarket {
                 System.out.print("Enter quantity (How much do you want?): ");
             }
         }
+        return quantity;
+    }
+
+    /**
+     * Add the specified quantity of a product to the trolley.
+     * @param shopTrolley The user's shopping trolley
+     * @param itemIndex Index of the product in marketItems
+     * @param quantity Number of items to add
+     */
+    private static void addProductsToTrolley(ShoppingTrolley shopTrolley, int itemIndex, int quantity) {
         for (int index = 0; index < quantity; index++) {
             ProductData data = marketItems[itemIndex];
             StoreItem product = createProduct(data);
             shopTrolley.buyItem(product);
         }
-        System.out.println("Products added to your trolley.");
     }
     
     /**
@@ -159,29 +194,51 @@ public class Supermarket {
         if (items.isEmpty()) {
             System.out.println("Sorry! Your trolley is Empty.");
         } else {
-            // Show each item
-            System.out.println("Your Selected Items:");
-            double total = 0;
-            double totalDiscount = 0;
-            int i = 0;
-            for (Object item : items) {
-                i++;
-                StoreItem totalItem = (StoreItem) item;
-                double price = totalItem.getProductCost();
-                double discount = totalItem.getDiscount();
-                double discountAmount = price * (discount / 100.0);
-                double finalPrice = price - discountAmount;
-                total += finalPrice;
-                totalDiscount += discountAmount;
-                System.out.printf("%d- %s | Original: Rs.%.2f | Discount: %.1f%% | Final: Rs.%.2f\n",
-                    i, totalItem.describe(), price, discount, finalPrice);
-            }
-            System.out.printf("Total Discount: Rs.%.2f\n", totalDiscount);
-            System.out.printf("Total Bill: Rs.%.2f\n", total);
+            printReceipt(items);
             shopTrolley.emptyTrolley();
         }
     }
-    
+
+    /**
+     * Print the receipt for the given items, showing discounts and totals.
+     * @param items List of purchased items
+     */
+    private static void printReceipt(ArrayList<Object> items) {
+        System.out.println("Your Selected Items:");
+        double total = 0;
+        double totalDiscount = 0;
+        int i = 0;
+        for (Object item : items) {
+            i++;
+            double[] itemTotals = processAndPrintItem(i, (StoreItem) item);
+            total += itemTotals[0]; // Add final price to total
+            totalDiscount += itemTotals[1]; // Add discount amount to total discount
+        }
+        // Print totals
+        System.out.printf("Total Discount: Rs.%.2f\n", totalDiscount);
+        System.out.printf("Total Bill: Rs.%.2f\n", total);
+    }
+
+    /**
+     * Processes a single item for the receipt: calculates its price,
+     * prints its details, and returns the calculated values.
+     * @param itemNumber The line number for the item on the receipt.
+     * @param item The StoreItem to process.
+     * @return A double array where index 0 is the final price and index 1 is the discount amount.
+     */
+    private static double[] processAndPrintItem(int itemNumber, StoreItem item) {
+        double price = item.getProductCost();
+        double discount = item.getDiscount();
+        double discountAmount = price * (discount / 100.0);
+        double finalPrice = price - discountAmount;
+
+        // Print details for this specific item
+        System.out.printf("%d- %s | Original: Rs.%.2f | Discount: %.1f%% | Final: Rs.%.2f\n",
+                itemNumber, item.describe(), price, discount, finalPrice);
+
+        return new double[]{finalPrice, discountAmount};
+    }
+
      // Holds product details
     private static class ProductData {
         String productName;
