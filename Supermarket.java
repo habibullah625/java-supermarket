@@ -15,20 +15,22 @@ public class Supermarket {
 
    // List of market items
     private static final ProductData[] marketItems = {
-        new ProductData("Banana", 60, "2025-05-11", null, 0, "Fruit", 100, 120.0, 10.0, 0.0, null), // 10% discount
-        new ProductData("Wheat Flour", 50, "2026-04-27", null, 0, "Grain", 80, 1000.0, 0.0, 0.0, null), // EdibleProduct
-        new ProductData("Milk", 70, "2025-05-04", null, 0, "Dairy", 60, 1000.0, 5.0, 0.0, null), // EdibleProduct
-        new ProductData("Lentils", 120, "2026-04-27", null, 0, "Pulse", 90, 500.0, 0.0, 0.0, null), // EdibleProduct
-        new ProductData("Tomato", 40, "2025-05-11", null, 0, "Vegetable", 120, 100.0, 0.0, 0.0, null), // EdibleProduct
-        new ProductData("Sugar", 45, "2027-04-27", null, 0, "Sweetener", 70, 1000.0, 0.0, 0.0, null), // EdibleProduct
-        new ProductData("Butter", 100, "2025-07-27", null, 0, "Dairy", 40, 500.0, 10.0, 0.0, null), // EdibleProduct
-        new ProductData("Shampoo", 150, null, "Shine", 1, "Personal Care", 50, 250.0, 10.0, 0.0, null), // NonEdibleProduct
-        new ProductData("Detergent", 80, null, "Tide", 1, "Cleaning", 60, 1000.0, 5.0, 0.0, null), // NonEdibleProduct
-        new ProductData("Toothpaste", 90, null, "DentalPro", 1, "Personal Care", 70, 150.0, 0.0, 0.0, null), // NonEdibleProduct
+        // EdibleProduct examples
+        new ProductData("E001", "Banana", 60, "2025-05-11", null, 0, "Fruit", 100, 120.0, 10.0, 0.0, null, new String[]{"Fructose"}, null, false),
+        new ProductData("E002", "Wheat Flour", 50, "2026-04-27", null, 0, "Grain", 80, 1000.0, 0.0, 0.0, null, new String[]{"Gluten"}, null, false),
+        new ProductData("E003", "Milk", 70, "2025-05-04", null, 0, "Dairy", 60, 1000.0, 5.0, 0.0, null, new String[]{"Lactose"}, null, false),
+        new ProductData("E004", "Lentils", 120, "2026-04-27", null, 0, "Pulse", 90, 500.0, 0.0, 0.0, null, null, null, false),
+        new ProductData("E005", "Tomato", 40, "2025-05-11", null, 0, "Vegetable", 120, 100.0, 0.0, 0.0, null, null, null, false),
+        new ProductData("E006", "Sugar", 45, "2027-04-27", null, 0, "Sweetener", 70, 1000.0, 0.0, 0.0, null, null, null, false),
+        new ProductData("E007", "Butter", 100, "2025-07-27", null, 0, "Dairy", 40, 500.0, 10.0, 0.0, null, new String[]{"Lactose", "Dairy"}, null, false),
+        // NonEdibleProduct examples
+        new ProductData("N001", "Shampoo", 150, null, "Shine", 1, "Personal Care", 50, 250.0, 10.0, 0.0, null, null, new String[]{"Keep out of eyes"}, false),
+        new ProductData("N002", "Detergent", 80, null, "Tide", 1, "Cleaning", 60, 1000.0, 5.0, 0.0, null, null, new String[]{"Irritant", "Do not ingest"}, false),
+        new ProductData("N003", "Toothpaste", 90, null, "DentalPro", 1, "Personal Care", 70, 150.0, 0.0, 0.0, null, null, null, false),
         // BeverageProduct examples
-        new ProductData("Orange Juice", 120, "2025-06-15", null, 2, "Beverage", 50, 1000.0, 15.0, 1000.0, "2025-06-15"), // 15% discount
-        new ProductData("Cola", 80, "2025-12-31", null, 2, "Beverage", 100, 1200.0, 5.0, 1500.0, "2025-12-31"),
-        new ProductData("Mineral Water", 40, "2026-01-01", null, 2, "Beverage", 200, 1000.0, 0.0, 2000.0, "2026-01-01")
+        new ProductData("B001", "Orange Juice", 120, "2025-06-15", null, 2, "Beverage", 50, 1000.0, 15.0, 1000.0, "2025-06-15", null, null, false),
+        new ProductData("B002", "Cola", 80, "2025-12-31", null, 2, "Beverage", 100, 1200.0, 5.0, 1500.0, "2025-12-31", null, null, true),
+        new ProductData("B003", "Mineral Water", 40, "2026-01-01", null, 2, "Beverage", 200, 1000.0, 0.0, 2000.0, "2026-01-01", null, null, false)
     };
     private static final int EXIT = marketItems.length + 1;
     
@@ -168,18 +170,18 @@ public class Supermarket {
     private static StoreItem createProduct(ProductData data) {
         if (data.productType == 0) {
             return new EdibleProduct(
-                data.productName, data.productCost, data.expiryDate,
-                data.category, data.stockQuantity, data.weight, data.discount
+                data.productName, data.productID, data.productCost, data.expiryDate,
+                data.category, data.stockQuantity, data.weight, data.discount, data.allergens
             );
         } else if (data.productType == 1) {
             return new NonEdibleProduct(
-                data.productName, data.productCost, data.productBrand,
-                data.category, data.stockQuantity, data.weight, data.discount
+                data.productName, data.productID, data.productCost, data.productBrand,
+                data.category, data.stockQuantity, data.weight, data.discount, data.safetyWarnings
             );
         } else if (data.productType == 2) {
             return new BeverageProduct(
-                data.productName, data.productCost, data.expiryDate,
-                data.category, data.stockQuantity, data.weight, data.discount, data.volume
+                data.productName, data.productID, data.productCost, data.expiryDate,
+                data.category, data.stockQuantity, data.weight, data.discount, data.volume, data.isCarbonated
             );
         }
         return null;
@@ -241,6 +243,7 @@ public class Supermarket {
 
      // Holds product details
     private static class ProductData {
+        String productID;
         String productName;
         int productCost;
         String expiryDate; // For edible and beverage
@@ -252,9 +255,14 @@ public class Supermarket {
         double discount;
         double volume; // For beverage
         String beverageExpiry; // For beverage (duplicate for clarity)
+        String[] allergens; // For edible
+        String[] safetyWarnings; // For non-edible
+        boolean isCarbonated; // For beverage
 
-        ProductData(String productName, int productCost, String expiryDate, String productBrand, int productType,
-                    String category, int stockQuantity, double weight, double discount, double volume, String beverageExpiry) {
+        ProductData(String productID, String productName, int productCost, String expiryDate, String productBrand, int productType,
+                    String category, int stockQuantity, double weight, double discount, double volume, String beverageExpiry,
+                    String[] allergens, String[] safetyWarnings, boolean isCarbonated) {
+            this.productID = productID;
             this.productName = productName;
             this.productCost = productCost;
             this.expiryDate = expiryDate;
@@ -266,6 +274,9 @@ public class Supermarket {
             this.discount = discount;
             this.volume = volume;
             this.beverageExpiry = beverageExpiry;
+            this.allergens = allergens;
+            this.safetyWarnings = safetyWarnings;
+            this.isCarbonated = isCarbonated;
         }
     }
 
