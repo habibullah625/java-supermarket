@@ -6,6 +6,8 @@ package supermarket;
 
 import java.util.ArrayList;
 import java.util.Scanner;
+import supermarket.StoreItem;
+import supermarket.ShoppingTrolley;
 
 /**
  *
@@ -32,7 +34,8 @@ public class Supermarket {
         new ProductData("B002", "Cola", 80, "2025-12-31", null, 2, "Beverage", 100, 1200.0, 5.0, 1500.0, "2025-12-31", null, null, true),
         new ProductData("B003", "Mineral Water", 40, "2026-01-01", null, 2, "Beverage", 200, 1000.0, 0.0, 2000.0, "2026-01-01", null, null, false)
     };
-    private static final int EXIT = marketItems.length + 1;
+    private static final int VIEW_EDIT_TROLLEY = marketItems.length + 1;
+    private static final int EXIT = marketItems.length + 2;
     
     /**
      * @param args the command line arguments
@@ -58,8 +61,10 @@ public class Supermarket {
     private static void showMenu() {
         System.out.println("===== MARKET MENU =====");
         for (int index = 0; index < marketItems.length; index++) {
-            System.out.println((index + 1) + ". Buy " + marketItems[index].productName);
+            String stockMsg = marketItems[index].stockQuantity == 0 ? " [OUT OF STOCK]" : " [Stock: " + marketItems[index].stockQuantity + "]";
+            System.out.println((index + 1) + ". Buy " + marketItems[index].productName + stockMsg);
         }
+        System.out.println(VIEW_EDIT_TROLLEY + ". View/Edit Trolley");
         System.out.println(EXIT + ". Checkout");
     }
     
@@ -108,6 +113,9 @@ public class Supermarket {
         if (choice == EXIT) {
             checkout(shopTrolley);
             return false; // Signals the main loop to stop
+        } else if (choice == VIEW_EDIT_TROLLEY) {
+            viewEditTrolley(shopTrolley, input);
+            return true;
         }
         addToTrolley(shopTrolley, input, choice - 1);
         return true; // Signals the main loop to continue
@@ -117,6 +125,11 @@ public class Supermarket {
      * Add products to trolley.
      */
     private static void addToTrolley(ShoppingTrolley shopTrolley, Scanner input, int itemIndex) {
+        ProductData data = marketItems[itemIndex];
+        if (data.stockQuantity == 0) {
+            System.out.println("Sorry, this item is out of stock.");
+            return;
+        }
         int quantity = promptForQuantity(input);
         addProductsToTrolley(shopTrolley, itemIndex, quantity);
         System.out.println("Products added to your trolley.");
@@ -156,10 +169,15 @@ public class Supermarket {
      * @param quantity Number of items to add
      */
     private static void addProductsToTrolley(ShoppingTrolley shopTrolley, int itemIndex, int quantity) {
+        ProductData data = marketItems[itemIndex];
+        if (data.stockQuantity < quantity) {
+            System.out.println("Not enough stock available. Only " + data.stockQuantity + " left.");
+            return;
+        }
         for (int index = 0; index < quantity; index++) {
-            ProductData data = marketItems[itemIndex];
             StoreItem product = createProduct(data);
             shopTrolley.buyItem(product);
+            data.stockQuantity--;
         }
     }
     
@@ -239,6 +257,53 @@ public class Supermarket {
                 itemNumber, item.describe(), price, discount, finalPrice);
 
         return new double[]{finalPrice, discountAmount};
+    }
+
+    /**
+     * View and edit the shopping trolley: display items, allow removal.
+     */
+    private static void viewEditTrolley(ShoppingTrolley shopTrolley, Scanner input) {
+        ArrayList<Object> items = shopTrolley.getItems();
+        if (items.isEmpty()) {
+            System.out.println("Your trolley is empty.");
+            return;
+        }
+        while (true) {
+            System.out.println("\n===== Your Trolley =====");
+            double subtotal = 0;
+            for (int i = 0; i < items.size(); i++) {
+                StoreItem item = (StoreItem) items.get(i);
+                double price = item.getProductCost();
+                double discount = item.getDiscount();
+                double finalPrice = price - (price * (discount / 100.0));
+                subtotal += finalPrice;
+                System.out.printf("%d. %s | Final: Rs.%.2f\n", i + 1, item.describe(), finalPrice);
+            }
+            System.out.printf("Subtotal: Rs.%.2f\n", subtotal);
+            System.out.println("Enter the number of the item to remove (or 0 to go back): ");
+            int removeIndex = -1;
+            if (input.hasNextInt()) {
+                removeIndex = input.nextInt();
+                if (removeIndex == 0) {
+                    break;
+                } else if (removeIndex >= 1 && removeIndex <= items.size()) {
+                    StoreItem removed = (StoreItem) items.remove(removeIndex - 1);
+                    // Find the corresponding ProductData and increase stock
+                    for (ProductData data : marketItems) {
+                        if (data.productID.equals(removed.getProductID())) {
+                            data.stockQuantity++;
+                            break;
+                        }
+                    }
+                    System.out.println("Removed: " + removed.describe());
+                } else {
+                    System.out.println("Invalid selection. Try again.");
+                }
+            } else {
+                System.out.println("Invalid input. Please enter a number.");
+                input.nextLine();
+            }
+        }
     }
 
      // Holds product details
